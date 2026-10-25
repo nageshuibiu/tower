@@ -7,9 +7,6 @@ on:
     paths:
       - '.github/workflows/build-ipa.yml'
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: macos-26
@@ -43,16 +40,9 @@ jobs:
           zip -qry Tower-unsigned.ipa Payload
           ls -lh Tower-unsigned.ipa
 
-      - name: Upload IPA as artifact
+      - name: Upload IPA as artifact (private, only visible to repo collaborators)
         uses: actions/upload-artifact@v4
         with:
           name: Tower-unsigned-ipa
           path: Tower-unsigned.ipa
-
-      - name: Publish IPA to a GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: Unsigned IPA build ${{ github.run_number }}
-          body: "Unsigned IPA built by GitHub Actions from this fork. Sideload with SideStore / AltStore / your own signing tool."
-          files: Tower-unsigned.ipa
+          retention-days: 90
