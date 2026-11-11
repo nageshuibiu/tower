@@ -1,11 +1,41 @@
 # 待办与待验证
 
+## 上游更新待处理（2026-11-09）
+
+来自 `Scripts/check_upstream_updates.py` 的对照，流程见 [UPSTREAM_SOURCES](UPSTREAM_SOURCES.md#维护流程)。已修的见 HANDOFF「按上游更新修正导出」。
+
+### 需要先用新内核或真机验证
+
+- [ ] **Hiddify 5.5**（正式）：内核换成 hiddify 的 sing-box 1.15 fork，塔台注释和文档仍按 1.13。用 hiddify-sing-box `check` 复验整份导出，再逐项决定：放开 VLESS XHTTP、Snell、TrustTunnel；规则集下载从已弃用的 `download_detour` 改为 `http_clients`；评估接上 `SingBoxDNSPolicy`。
+- [ ] **Stash iOS 3.6.5**（正式）：Snell v4/v5、Trojan/VMess REALITY、VLESS REALITY + ws/h2、XHTTP、VLESS Encryption、SSH host-key、MASQUE 复测。**Stash Mac 正式版仍是 4.2**，`.clash` 同时覆盖两端，放开前要么等 Mac 4.3，要么加版本偏好。
+- [ ] **「Clash」App 策略组图标**（1.0.7+ 正式）：2026-11-09 已按更新说明加入 `PolicyGroupIconSupport.drawsIcons`，组名不再带 Emoji（地区组保留国旗）。**待真机确认**图标确实显示；不显示就撤回。
+- [ ] **mihomo 系 `dns.ipv6`**：clash.md 写明默认 false；开 IPv6 时应同时写 `dns: ipv6: true`。
+- [ ] **Stash Tailscale Auth Key 可选**（3.4+ 支持 Web 登录）：改动涉及 CLAUDE.md 第 24 条，先确认。
+- [ ] **mihomo `load-balance` 的 `hash-key`**：导入方案还原时透传。
+
+### 等正式版或文档
+
+- [ ] sing-box 1.15 稳定且 sing-box MT 跟进后：把 `ClientTarget.singBoxSupportsMASQUE` 改为 true；TUN 不再写 `stack`；`certificate_sha256` 放开带证书指纹的节点；实测 HTTP 出站默认 HTTP/2 的回退。
+- [ ] Snell v6 `mode`：现在拒绝非默认值。需要时给 `ProxyNode` 建模并写给 Surge（`mode=`），Clash App / Stash 也有 v6 字段。
+- [ ] Egern 2.21 的 SRC-IP 规则和 Tailscale 代理：等官方文档公开 YAML 字段；Tailscale 按 CLAUDE.md 第 24 条评估。
+- [ ] Karing 1.2.26（目前只在 GitHub 预发布）：上 App Store 后测 mihomo 写法的 Tailscale 和 MASQUE 方言。
+- [ ] Stash TestFlight：`SRC-PORT`、`REJECT-NO-DROP`、StashLink 中继、Tailscale 对等中继。
+- [ ] Surge 策略组 `category`（5.23 / Mac 6.10 正式）：会改变面板分组展示，和第 26 条的 `groupOrder` 一起评估，先问用户。
+- [ ] 新协议（mieru、sudoku、EasyTier、AmneziaWG 等）：目前解析时跳过，属于新功能。
+
+### 只需写进兼容文档
+
+- [ ] Clash Verge / FlClash 的 TUN 以客户端设置为准；Verge / Clash Party 的「DNS 覆写保护」会先弹确认，可能挡掉塔台写的 DNS 段。
+- [ ] Clash App 在 Mac 上也注册了 `flclash://`，同时装两个 App 时给 FlClash 的一键导入可能打开 Clash。
+- [ ] Surge：Snell v6 最低版本（iOS 5.20.0 / Mac 6.7.0，协议仍为 beta）、HTTP/2 CONNECT `udp-relay`、`server-cert-verify-name`。
+- [ ] ClashMac 的 Sparkle 源地址：从安装包 `Info.plist` 读 `SUFeedURL` 后补进清单。
+
 ## 策略组图标（2026-10-19，未发布）
 
 - [x] 2026-10-19 国旗提交 `425b0a7` 已推送，清单已绑定，jsDelivr 回读 187 面一致。
 - [ ] App 代码与清单（本地未提交）。
 - [ ] 真机看图标：Surge iOS 策略组卡片、Surge Mac、Stash、Clash Verge、QuanX、Loon、Egern；确认 Loon 策略组的 `img-url`、Surge iOS 的 `icon-url` 实际生效。
-- [ ] FlClash、Mihomo Party、ClashMac、Clash Mi、名为 Clash 的 App 是否显示 `icon`；确认显示的加进 `PolicyGroupIconSupport.drawsIcons`。
+- [ ] FlClash、Clash Party、ClashMac、Clash Mi 是否显示 `icon`；确认显示的加进 `PolicyGroupIconSupport.drawsIcons`。（名为 Clash 的 App 已按更新说明加入，见「上游更新待处理」。）
 - [ ] 导入一份无 Emoji 的方案，确认自动补全的结果和菜单开关。
 
 ## 规则集扩展（2026-10-18，未发布）
@@ -139,27 +169,21 @@
   - 首页卡片去掉滑动删除，删除保留在长按菜单和管理页。
   - 自有节点区改用一个共享的 `List`。
 
-## GitHub Issues 状态（2026-10-08 核对）
+## GitHub Issues 状态（2026-11-11 核对）
 
-2026-10-08 已回复并关闭随 1.0.20 / 1.0.22 发布的 #7、#15、#17、#19、#30、#33、#36、#37、#38、#40。
-
-**已随 1.0.26（65）发布至 TestFlight / GitHub**
-- [#41](https://github.com/pengchujin/tower/issues/41) 代理链接凭据里的 `%` 被解码两次：只用 `URLComponents` 解码一次。
-- [#42](https://github.com/pengchujin/tower/issues/42) 分享 Clash 导入的 Snell 节点得到 `clash://local/` 占位符：改为生成 Surge 代理行；同时补读 Clash Snell 的 `obfs-opts`。
-- [#43](https://github.com/pengchujin/tower/issues/43) 多条 `http://host:port` 代理被当成订阅：单条与多条共用同一个判断。
-- [#44](https://github.com/pengchujin/tower/issues/44) SS 插件参数值里的 `;` 截断路径：导出（分享链接、sing-box `plugin_opts`）转义，解析支持转义。
-- #42–#44 此前已回复「下个版本发布」，#41 未回复；本次仅发布，未发送 Issue 回复或关闭操作。
+2026-11-11 已回复并关闭：#51（Anywhere 一键导入改发 AJSON，真机通过，未发布）、#49、#50、#22（1.0.31 修复）、#45（1.0.30 上线）、#48（已有内置 Tailscale 写法，`[Proxy]` 不随方案保存）、#11（不计划支持 iOS 16）。更早关闭的见 git 历史。
 
 **部分完成**
-- [#22](https://github.com/pengchujin/tower/issues/22) Mac 闪退：已在 1.0.10 修复，地区组变 REJECT 的问题也在 1.0.11 修复。剩下 Mac 手动编辑配置时中文输入法重复出拼音，HANDOFF 里一直记为未修，需要在 Mac 上复现后再改。
-- [#31](https://github.com/pengchujin/tower/issues/31) Self-Configuration 的地区组匹配不到节点：地区按节点名匹配，名字里没有地区就进不了地区组。塔台已有节点详情里的「手动地区」，但它只影响塔台自己按 IP 库分组的内置预设和界面，不影响导入方案里按名字正则匹配的地区组。报告者想要的「重命名覆写 / 手动归类」还没做。
-- [#13](https://github.com/pengchujin/tower/issues/13) 代理链：规则定制里的策略组已有「中继（relay）」类型；节点级的前置代理（mihomo 的 `dialer-proxy`、Surge 的 `underlying-proxy`）还没有。
+- [#31](https://github.com/pengchujin/tower/issues/31) Self-Configuration 的地区组匹配不到节点：它是导入方案，地区组按节点名正则匹配。节点详情里的「手动地区」只影响界面和内置预设的 IP 库分组，不影响名字正则。报告者想要的「重命名覆写 / 手动归类」还没做。
+- [#13](https://github.com/pengchujin/tower/issues/13) 代理链：策略组已有「中继（relay）」类型；节点级前置代理（mihomo `dialer-proxy`、Surge `underlying-proxy`）还没有。
 
-**未做**
-- [#35](https://github.com/pengchujin/tower/issues/35) 测速后自动剔除或隐藏超时节点：没做。需要设计：连续失败多少次才剔除、刷新后是否沿用、能否一键恢复。
-- [#16](https://github.com/pengchujin/tower/issues/16) Base Profile / 原样保留模式：没做，是很大的功能，需要单独设计。
-- [#39](https://github.com/pengchujin/tower/issues/39) Nextin 模板覆写订阅：没做。这类客户端要定期去拉一个模板地址，而塔台的本机服务只绑定 127.0.0.1、3 分钟失效（CLAUDE.md #3），也不上传到第三方。可行性要先评估。
-- [#11](https://github.com/pengchujin/tower/issues/11) 支持 iOS 16：没做，最低版本仍是 iOS 17。
+**未做（功能建议）**
+- [#52](https://github.com/pengchujin/tower/issues/52) 「添加网站」增加 GEOIP、IP-ASN、SRC-IP-CIDR、PROTOCOL、AND/OR/NOT：要按 `RoutingRuleCapabilities` 逐客户端处理。
+- [#53](https://github.com/pengchujin/tower/issues/53) DNS 保护模式说明，导出预览显示解析链路及对代理策略组的依赖。
+- [#54](https://github.com/pengchujin/tower/issues/54) 规则方案菜单直接导出 INI 文件 / 系统分享。
+- [#55](https://github.com/pengchujin/tower/issues/55) 支持 Pharos Pro：需先调研它的配置格式与导入方式。
+- [#35](https://github.com/pengchujin/tower/issues/35) 测速后自动剔除或隐藏超时节点：需要设计连续失败阈值、刷新后沿用、一键恢复。
+- [#16](https://github.com/pengchujin/tower/issues/16) Base Profile / 原样保留模式：很大的功能，需要单独设计。
 
 ## DNS：待真机验证与后续（2026-09-29）
 

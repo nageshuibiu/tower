@@ -1,5 +1,50 @@
 # 当前交接
 
+## 1.0.31（73）TestFlight 与 Mac 分发（2026-11-11）
+
+- 1.0.31 仍在 TestFlight（App Store 为 1.0.30），用户要求只递增构建号并更新 GitHub 版本。纳入下方「按上游更新修正导出」与「Clash App 显示策略组图标」。更新日志见 [1.0.31](releases/1.0.31.md)。
+- 发布前全量 TowerTests 1,378 项（8 跳过）零失败；ACL4SSR 已是上游最新（`bdc102f`）。
+- 本机 M4 用 asc 归档两端，核对 `com.jzb.tower` 1.0.31（73），Mac 为 arm64 / x86_64；`Config/release.local.sh` 没填团队，本次从上一版发布目录的 `NotarizeOptions.plist` 读取，只放在进程变量里。asc 上传两端，Apple 处理均为 VALID，已加入外部组「测试」并提交 Beta 审核（WAITING_FOR_REVIEW）。私有归档与日志在 `~/Builds/Tower-1.0.31-73/`。
+- Mac 直接分发：Developer ID 导出并公证，`stapler validate`、严格签名、Gatekeeper（Notarized Developer ID）、双架构与 DMG 挂载复核通过。GitHub [v1.0.31-73](https://github.com/pengchujin/tower/releases/tag/v1.0.31-73)（tag 指向 `267b1c2`）已公开并设为 Latest，回下载 SHA-256 一致：`3acfa6016d67820f1472d2fcaa027ea78f65edc790c39436293d425ad94dde8e`。
+- README 下载入口改为 v1.0.31-73；Homebrew cask 更新为 1.0.31,73，`brew style` / `brew audit` 通过。本机 `brew upgrade --cask` 后为 1.0.31（73），严格签名、Gatekeeper、公证票据通过，保留隔离标记，可启动。
+- 待用户确认：「Clash」App 策略组图标真机显示（见 TODO）。
+
+## 未发布：Anywhere 一键导入保留跳过证书校验（issue #51，2026-11-11）
+
+- 依据：Anywhere 上游 8b1ec05 的 `Documentations/AJSON.md` 与 `Shared/Utilities/AJSONParser.swift`。2026-10-28 起拉订阅会带 `X-Anywhere-Format: ajson/1`；AJSON 的 TLS 层有逐节点 `insecure`，分享链接没有。它另有全局「允许不安全连接」开关，但作用于所有节点，不采用。
+- 做法：`generateNodeSubscription` 对 Anywhere 额外生成 `anywhereAJSON`，只在有跳过证书校验、且 Anywhere 真能保留的节点（VLESS + TLS 的 raw / HTTPUpgrade、Trojan、AnyTLS）时生成；这些节点写成结构化 proxy（`insecure: true`），其他节点仍是原链接字符串，文档里不改变别的。结构化字段按 Anywhere 链接解析器的读法从同一条链接换算：无 `fp` 写 `fingerprint: plain`（AJSON 默认是 Chrome），`sni` / `peer`、`alpn`、httpupgrade 的 host / path 照搬；带 `ech`、`headerType` 或其他传输的不写，继续跳过。
+- **VLESS WS / gRPC / XHTTP 不写**：真机实测（2026-11-11）这两类节点在 Anywhere 里显示 insecure、连不上。原因在 Anywhere 上游：`ProxyClient+VLESSTransport.swift` / `ProxyClient+XHTTP.swift` 为这些传输重建 `TLSConfiguration` 时没有带 `insecureSkipVerify`。上游修好后可以放开。
+- **计数**：有 AJSON 时，导出页「兼容节点」按一键导入（主按钮）计算，这些节点不再列在「已跳过」，改为一条兼容性提示：复制配置文本或存储文件时不包含它们。
+- `LocalConfigurationServer` 只对带该请求头的请求返回 AJSON（`application/json`），旧版 Anywhere、复制和存储文件仍是链接，这些节点照旧跳过，见上面的计数说明。Hysteria 没有 `insecure`、Reality 没有证书校验可跳，仍按原提示跳过。
+- 新增一条界面文案，15 种语言已补（手写翻译），`check_localization.sh` 通过。
+- 验证：AnywhereTests（含新增 6 项：AJSON 结构与计数、无此类节点不生成、VLESS HTTPUpgrade / AnyTLS 参数、VLESS WS / gRPC / XHTTP 仍跳过、Hysteria 仍跳过、本机服务按请求头返回）与 DirectImportServiceTests、LocalizationTests 通过。真机第一轮：Trojan、VLESS TLS、AnyTLS 自签节点一键导入后可用，VLESS WS / gRPC 失败（已改为跳过）。第二轮（用户确认通过）：导出页显示 5 兼容 / 跳过 3 / 1 条提示，一键导入后 Trojan、VLESS TLS、AnyTLS、VLESS HTTPUpgrade 自签节点与正常证书对照节点均可用。测试服务和订阅已从 VPS 删除。
+
+## 未发布：「Clash」App 显示策略组图标（2026-11-09）
+
+- 依据：Clash iOS 1.0.7 / macOS 1.0.10 更新说明「策略组可以填图标地址，编辑器和代理页都会显示分组图标」，1.0.14 修复开图标后节点名被截断。
+- `.clashApple` 加入 `PolicyGroupIconSupport.drawsIcons`：写 `icon`，组名去掉重复 Emoji，地区组保留国旗并写圆形国旗图标（CLAUDE.md 第 6 条）。
+- 验证：PolicyGroupIconTests 等 4 个测试类 76 项通过。**待真机确认**图标显示；不显示就从 `drawsIcons` 移除。
+
+## 未发布：按上游更新修正导出（2026-11-09）
+
+- 起因：用户要求按上游更新对照结果修改（本机报告在 `docs/reports/`，该目录不提交）。改动说明见 [CLIENT-COMPATIBILITY](CLIENT-COMPATIBILITY.md#上游更新对照修正2026-11-09未发布)。
+- sing-box MT 暂停 Basic CONNECT-IP（MASQUE），endpoint 写法保留，测试用 `supportedKindsOverride` 继续覆盖。
+- Loon `tls-profile` 只写合法值；Loon 放开 `DOMAIN-WILDCARD`。
+- Snell v6 非默认 `mode`、XHTTP 非空 `extra` / 多余 `xhttp-opts` 在解析时拒绝并计数（第 12 条）。
+- 「Clash」App（`.clashApple`）并入 `clashStrictDNSTargets`：严格保护写 `#组&ecs=…&ecs-override=true` 和 `direct-nameserver`，MATCH 前的 `GEOIP` 按 mihomo 规则处理。CLAUDE.md 第 25 条同步修改。依据 clash.md 的 DNS 页（配置按原样运行，只替换 system/dhcp）；2026-11-09 真机验收通过（见下）。
+- Egern 支持 SSR（2.21.0），字段与白名单照 Sub-Store；Egern 官方文档未写，需真机验收。
+- Mihomo Party 显示名改为 Clash Party，rawValue `mihomo-party` 与资源名不变。
+- 未做（需要内核或真机先验证）：Hiddify 5.5（sing-box 1.15 fork）放开 XHTTP / Snell / TrustTunnel 与 `http_clients`、Stash 3.6 的 Snell v4/v5 / REALITY / XHTTP / MASQUE、Clash App 的 `drawsIcons`、`dns.ipv6`、Stash Tailscale Key 可选。
+- 没有新增界面文案。
+- 验证：全量 TowerTests 1,378 项（8 跳过）零失败；两份 Clash 配置通过 mihomo 1.19.31 `-t`。已覆盖安装到 iPhone。
+- 真机验收（2026-11-09，用户确认全部通过）：用测试 VPS 的节点生成四份配置，在客户端里直接导入——「Clash」App 严格保护（`#组&ecs`）与标准保护均能正常上网、`DOMAIN-WILDCARD` 分流正确；Egern 导入 `shadowsocksr` 节点并连通；Loon 3.5.3 读取 `DOMAIN-WILDCARD`，`tls-profile=safari-ios18` / `chrome` 的 Reality 节点可连。测试文件已从服务器删除。
+
+## 未发布：上游客户端与协议发布渠道清单（2026-11-09）
+
+- 新增 `Scripts/upstream_sources.json`（18 个客户端、3 个内核、2 个参考转换器、16 个协议条目，共 64 项自动检查）和 `Scripts/check_upstream_updates.py`：自动查 App Store、GitHub Release（含滚动预发布）、Telegram 频道、TestFlight、Sparkle、文档页哈希，只报告变化。阅读版与渠道可信度说明见 [UPSTREAM_SOURCES](UPSTREAM_SOURCES.md)。
+- 调研发现「Clash」App 有独立文档 clash.md（基于 mihomo），与 CLAUDE.md 第 25 条「与 Stash 同文档」的说法不符，待复核；Mihomo Party 已改名 Clash Party。
+- 验证：`check_upstream_updates_test.py` 11 项通过；64 项全部实跑成功，页面哈希连续两次一致。
+
 ## 1.0.31（72）TestFlight 与 Mac 分发（2026-11-09）
 
 - 1.0.30 已在 App Store 上架（READY_FOR_DISTRIBUTION），按发布文档递增 MARKETING_VERSION。用户真机验证 iCloud 同步、#49、#50 和 Mac 调试版 #22 后要求推送 TestFlight 并更新 GitHub 版本。更新日志见 [1.0.31](releases/1.0.31.md)。

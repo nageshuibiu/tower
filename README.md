@@ -8,7 +8,7 @@
 
 在 iPhone、iPad 和 Mac 上管理机场订阅与自有节点，选好分流规则，一键导入你常用的客户端。
 
-<a href="https://github.com/pengchujin/tower/releases/download/v1.0.31-72/Tower-1.0.31-72-macOS-universal.dmg"><img src="docs/images/download-mac.svg" width="210" height="48" alt="免费下载 Mac 版"></a>
+<a href="https://github.com/pengchujin/tower/releases/download/v1.0.31-73/Tower-1.0.31-73-macOS-universal.dmg"><img src="docs/images/download-mac.svg" width="210" height="48" alt="免费下载 Mac 版"></a>
 &nbsp;
 <a href="https://apps.apple.com/app/id6797458927"><img src="docs/images/download-ios.svg" width="210" height="48" alt="App Store 支持"></a>
 
@@ -44,7 +44,7 @@
 <img src="docs/images/clients/clash-verge.png" width="72" alt="Clash Verge">
 <img src="docs/images/clients/clashmac.png" width="72" alt="ClashMac">
 <img src="docs/images/clients/flclash.png" width="72" alt="FlClash">
-<img src="docs/images/clients/mihomo-party.png" width="72" alt="Mihomo Party">
+<img src="docs/images/clients/mihomo-party.png" width="72" alt="Clash Party">
 </p>
 
 **iPhone、iPad 及其他**
@@ -86,7 +86,7 @@
 ## 下载与安装
 
 - **iPhone / iPad**：[App Store](https://apps.apple.com/app/id6797458927)
-- **Mac**：[下载 DMG](https://github.com/pengchujin/tower/releases/download/v1.0.31-72/Tower-1.0.31-72-macOS-universal.dmg)，或使用 Homebrew：
+- **Mac**：[下载 DMG](https://github.com/pengchujin/tower/releases/download/v1.0.31-73/Tower-1.0.31-73-macOS-universal.dmg)，或使用 Homebrew：
 
 ```sh
 brew install --cask pengchujin/tap/tower

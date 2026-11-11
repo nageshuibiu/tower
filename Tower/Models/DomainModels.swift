@@ -1337,7 +1337,9 @@ enum ClientTarget: String, CaseIterable, Identifiable, Codable {
         case .clashVerge: "Clash Verge"
         case .clashMac: "ClashMac"
         case .flClash: "FlClash"
-        case .mihomoParty: "Mihomo Party"
+        // Renamed from Mihomo Party (mihomo-party-org/clash-party, 2.0.3).
+        // The raw value and asset name stay so saved selections still decode.
+        case .mihomoParty: "Clash Party"
         case .shadowrocket: "Shadowrocket"
         case .loon: "Loon"
         case .quanx: "QuanX"
@@ -1547,11 +1549,19 @@ enum ClientTarget: String, CaseIterable, Identifiable, Codable {
             : String(localized: "用文件导出到 \(name)")
     }
 
+    /// Flip once sing-box MT ships a stable 1.15 core (see `supports`).
+    static let singBoxSupportsMASQUE = false
+
     func supports(_ kind: ProxyKind) -> Bool {
         // Other clients may implement a different MASQUE dialect.
         if kind == .masque {
+            // sing-box's `masque-client` endpoint arrived in 1.15.0-alpha.7.
+            // sing-box MT on the App Store still runs 1.14 and rejects the
+            // whole profile on an unknown endpoint type, so it stays off until
+            // `singBoxSupportsMASQUE` is flipped for a stable 1.15 release.
+            if self == .singBox { return ClientTarget.singBoxSupportsMASQUE }
             return [.surge, .surgeMac, .clashApple, .clashVerge, .clashMac,
-                    .flClash, .mihomoParty, .clashMi, .shadowrocket, .singBox].contains(self)
+                    .flClash, .mihomoParty, .clashMi, .shadowrocket].contains(self)
         }
         return switch self {
         case .clash, .clashApple, .clashVerge, .clashMac, .flClash, .mihomoParty, .clashMi:
@@ -1594,8 +1604,10 @@ enum ClientTarget: String, CaseIterable, Identifiable, Codable {
             kind != .unknown && kind != .shadowsocksR && kind != .trustTunnel
         case .egern:
             // Egern's own producer lists tuic but no hysteria 1.
-            // SSH arrived in Egern 2.20; TrustTunnel is not a proxy type there.
-            [.shadowsocks, .vmess, .vless, .trojan, .hysteria2, .tuic, .wireguard, .anytls, .snell, .socks5, .http,
+            // SSH arrived in Egern 2.20, ShadowsocksR in 2.21 (stream
+            // ciphers only, see `egernAcceptsShadowsocksR`); TrustTunnel is
+            // not a proxy type there.
+            [.shadowsocks, .shadowsocksR, .vmess, .vless, .trojan, .hysteria2, .tuic, .wireguard, .anytls, .snell, .socks5, .http,
              .ssh].contains(kind)
         case .anywhere:
             [.vless, .hysteria2, .trojan, .anytls, .shadowsocks, .socks5].contains(kind)
@@ -2191,6 +2203,9 @@ struct GeneratedConfiguration {
     let profileName: String
     let contentMode: ExportContentMode
     let fileExtensionOverride: String?
+    /// Anywhere's AJSON form of `content`, served only to a client that asks
+    /// for it. Present only when it keeps nodes the share links cannot.
+    let anywhereAJSON: String?
 
     init(
         target: ClientTarget,
@@ -2204,8 +2219,10 @@ struct GeneratedConfiguration {
         remoteSourceCount: Int = 0,
         diagnostics: [String] = [],
         hasInvalidPolicyReferences: Bool = false,
-        skippedNodes: [SkippedExportNode] = []
+        skippedNodes: [SkippedExportNode] = [],
+        anywhereAJSON: String? = nil
     ) {
+        self.anywhereAJSON = anywhereAJSON
         self.diagnostics = diagnostics
         self.hasInvalidPolicyReferences = hasInvalidPolicyReferences
         self.target = target
@@ -2239,7 +2256,8 @@ struct GeneratedConfiguration {
             remoteSourceCount: remoteSourceCount,
             diagnostics: diagnostics,
             hasInvalidPolicyReferences: hasInvalidPolicyReferences,
-            skippedNodes: skippedNodes
+            skippedNodes: skippedNodes,
+            anywhereAJSON: anywhereAJSON
         )
     }
 }
