@@ -110,7 +110,10 @@ final class ConfigurationGeneratorTests: XCTestCase {
         }
     }
 
-    func testSurgeSkipsUnsupportedVLESSAndReportsIt() {
+    /// App Store Surge has no VLESS, so the file leaves it out; Surge iOS
+    /// TestFlight 4024+ gets it by one-tap import, so it is reported as a
+    /// compatibility note rather than a skipped node.
+    func testSurgeLeavesVLESSOutOfFileAndNotesTestFlight() {
         let vless = ProxyNode(
             kind: .vless,
             name: "VLESS",
@@ -127,7 +130,8 @@ final class ConfigurationGeneratorTests: XCTestCase {
         )
 
         XCTAssertEqual(result.supportedNodeCount, 2)
-        XCTAssertEqual(result.skippedNodeCount, 1)
+        XCTAssertEqual(result.skippedNodeCount, 0)
+        XCTAssertTrue(result.diagnostics.contains { $0.contains("TestFlight 4024") })
         XCTAssertFalse(result.content.contains("vless.example.com"))
     }
 
@@ -648,7 +652,10 @@ final class ConfigurationGeneratorTests: XCTestCase {
             let result = ConfigurationGenerator().generateNodeSubscription(
                 nodes: nodes + [snell, unsupported], target: target, excludedKinds: [.vmess])
             XCTAssertEqual(result.supportedNodeCount, 2)
-            XCTAssertEqual(result.skippedNodeCount, 2)
+            // VMess is filtered out; VLESS is left out of the App Store list
+            // but noted for Surge betas instead of counted as skipped.
+            XCTAssertEqual(result.skippedNodeCount, 1)
+            XCTAssertTrue(result.diagnostics.contains { $0.contains("VLESS") })
             XCTAssertEqual(result.ruleCount, 0)
             XCTAssertTrue(result.content.contains("Hong Kong = ss, hk.example.com, 8388"))
             XCTAssertTrue(result.content.contains("Private = snell, snell.example, 443, psk=psk, version=4"))
